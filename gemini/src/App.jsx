@@ -3,10 +3,8 @@ import Design from './design/Design'
 import DesignTwo from './Design/DesignTwo'
 function App() {
   return (
-    <div>
-     
+    <div>   
      <Design/>
-
     </div>
   )
 }

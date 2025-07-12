@@ -4,10 +4,35 @@ import { IoMdSend } from "react-icons/io";
 import { FaRegEdit } from "react-icons/fa";
 import { TfiSettings } from "react-icons/tfi";
 import { CgProfile } from "react-icons/cg";
+import { URL } from "./constant";
 function Design() {
   const [collapsed, setCollapsed] = useState(false);
-  const [message, setMessage] = useState("");
+const [result, setResult] = useState(undefined);
 
+ const playload = {
+     "contents": [
+      {
+        "parts": [
+          {
+            "text": "questions"
+          }
+        ]
+      }
+    ]
+  }
+  const [question, setQuestion] = useState("");
+  const askQuestion = async () => {
+    let response = await fetch(URL,{
+      method: "POST",
+      body: JSON.stringify(playload),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    response= await response.json();
+    console.log(response);
+    setResult(response.candidates[0].context.parts[0].text);
+  };
   return (
     <div className="min-h-screen flex bg-zinc-900 text-white">
       {/* Sidebar */}
@@ -27,14 +52,14 @@ function Design() {
 
           {/* New Chat */}
           <button className="flex items-center gap-3 text-zinc-300 hover:text-white p-2 hover:bg-zinc-800 rounded-md">
-            <FaRegEdit className="text-xl" /> 
+            <FaRegEdit className="text-xl" />
             {!collapsed && <span>New chat</span>}
           </button>
 
           {/* Explore Gems */}
           <button className="flex items-center gap-3 text-zinc-300 hover:text-white p-2 hover:bg-zinc-800 rounded-md">
-            {!collapsed && <IoDiamondOutline className="text-xl" />} 
-            
+            {!collapsed && <IoDiamondOutline className="text-xl" />}
+
             {!collapsed && <span>Explore Gems</span>}
           </button>
         </div>
@@ -45,9 +70,11 @@ function Design() {
           {!collapsed && <span>Settings and help</span>}
         </div>
       </aside>
-      
+
       <div className="text-zinc-500 p-2 font-medium text-2xl">Gemini</div>
-      <div className="text-zinc-500 p-2 font-medium text-3xl absolute right-0"><CgProfile /></div>
+      <div className="text-zinc-500 p-2 font-medium text-3xl absolute right-0">
+        <CgProfile />
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center items-center px-6">
@@ -58,15 +85,16 @@ function Design() {
         {/* Input Box */}
         <div className="relative w-full mt-50 max-w-xl bg-zinc-800 rounded-2xl p-4 shadow-md">
           <input
+            onChange={(e) => setQuestion(e.target.value)}
+            value={question}
             type="text"
             placeholder="Ask Gemini anything..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
             className="w-full bg-transparent text-white placeholder-zinc-400 border border-zinc-700 rounded-xl py-4 px-5 pr-16 
                        focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
           />
 
           <button
+            onClick={askQuestion}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all
              "
           >
