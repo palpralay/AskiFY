@@ -6,7 +6,6 @@ function App() {
     <div>
      
      <Design/>
-      {/* <DesignTwo/> */}
 
     </div>
   )

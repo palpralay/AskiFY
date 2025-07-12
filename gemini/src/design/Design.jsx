@@ -3,7 +3,7 @@ import { IoMenu, IoDiamondOutline } from "react-icons/io5";
 import { IoMdSend } from "react-icons/io";
 import { FaRegEdit } from "react-icons/fa";
 import { TfiSettings } from "react-icons/tfi";
-
+import { CgProfile } from "react-icons/cg";
 function Design() {
   const [collapsed, setCollapsed] = useState(false);
   const [message, setMessage] = useState("");
@@ -45,6 +45,9 @@ function Design() {
           {!collapsed && <span>Settings and help</span>}
         </div>
       </aside>
+      
+      <div className="text-zinc-500 p-2 font-medium text-2xl">Gemini</div>
+      <div className="text-zinc-500 p-2 font-medium text-3xl absolute right-0"><CgProfile /></div>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center items-center px-6">
