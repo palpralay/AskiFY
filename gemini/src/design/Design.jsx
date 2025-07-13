@@ -12,7 +12,7 @@ import {
 import { URL } from "./constant";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import "highlight.js/styles/github-dark.css"; // you can change the theme if you want
+import "highlight.js/styles/github-dark.css"; 
 
 function Design() {
   const [collapsed, setCollapsed] = useState(false);
