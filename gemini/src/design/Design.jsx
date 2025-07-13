@@ -1,9 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { IoMenu, IoDiamondOutline } from "react-icons/io5";
-import { IoMdSend } from "react-icons/io";
-import { FaRegEdit } from "react-icons/fa";
-import { TfiSettings } from "react-icons/tfi";
-import { CgProfile } from "react-icons/cg";
+import {
+  Menu,
+  Diamond,
+  Send,
+  Edit3,
+  Settings,
+  User,
+  Copy,
+  RefreshCw,
+} from "lucide-react";
 import { URL } from "./constant";
 
 function Design() {
@@ -14,7 +19,6 @@ function Design() {
   const [error, setError] = useState(null);
   const chatEndRef = useRef(null);
 
-  // Greeting suggestions
   const greetingSuggestions = [
     "Good morning!",
     "Morning!",
@@ -25,51 +29,91 @@ function Design() {
     "Bonjour!",
     "Guten Morgen!",
     "Ohayo gozaimasu!",
-    "How's your morning going?"
+    "How's your morning going?",
   ];
+
+  const formatAIResponse = (text) => {
+    const lines = text.split(/\n|\* /).filter((line) => line.trim());
+    return lines
+      .map((line, index) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return null;
+        if (trimmedLine.startsWith("*") || text.includes("* ")) {
+          return (
+            <li key={index} className="mb-2">
+              {trimmedLine.replace(/^\*\s*/, "")}
+            </li>
+          );
+        }
+        return (
+          <p key={index} className="mb-3 leading-relaxed">
+            {trimmedLine}
+          </p>
+        );
+      })
+      .filter(Boolean);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
 
   const askQuestion = async () => {
     if (!question.trim()) return;
-    
-    // Add user's question to chat history
+
     const newChatHistory = [
       ...chatHistory,
-      { text: question, isUser: true }
+      {
+        text: question,
+        isUser: true,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
     ];
     setChatHistory(newChatHistory);
-    
+
     setLoading(true);
     setError(null);
+    const currentQuestion = question;
     setQuestion("");
-    
-    try {
-      const payload = {
-        contents: [
-          {
-            parts: [{ text: question }],
-          },
-        ],
-      };
 
-      let response = await fetch(URL, {
+    try {
+      const res = await fetch(URL, {
         method: "POST",
-        body: JSON.stringify(payload),
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: currentQuestion,
+                },
+              ],
+            },
+          ],
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
+      const data = await res.json();
 
-      response = await response.json();
-      const aiResponse = response.candidates[0].content.parts[0].text;
-      
-      // Add AI response to chat history
+      const aiResponse =
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "No response received.";
+
       setChatHistory([
         ...newChatHistory,
-        { text: aiResponse, isUser: false }
+        {
+          text: aiResponse,
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
       ]);
     } catch (err) {
       setError(err.message || "Failed to get response");
@@ -79,73 +123,81 @@ function Design() {
     }
   };
 
-  // Auto-scroll to bottom when chat updates
+  const retryLastQuestion = () => {
+    const lastUserMessage = chatHistory.filter((chat) => chat.isUser).pop();
+    if (lastUserMessage) {
+      setQuestion(lastUserMessage.text);
+    }
+  };
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
+  }, [chatHistory, loading]);
 
   return (
-    <div className="min-h-screen flex bg-zinc-900 text-white">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Sidebar */}
       <aside
-        className={`h-screen bg-zinc-950 fixed transition-all duration-300 flex flex-col justify-between 
-        ${collapsed ? "w-16" : "w-64"} p-4`}
+        className={`h-screen bg-slate-950/50 backdrop-blur-sm fixed transition-all duration-300 flex flex-col justify-between border-r border-slate-700/50 ${
+          collapsed ? "w-16" : "w-64"
+        } p-4 z-10`}
       >
-        {/* Top Section */}
         <div className="flex flex-col gap-4">
-          {/* Toggle Button */}
           <div
-            className="text-2xl hover:bg-zinc-800 p-2 cursor-pointer rounded-full w-fit"
+            className="text-2xl hover:bg-slate-800/50 p-2 cursor-pointer rounded-lg w-fit transition-all"
             onClick={() => setCollapsed(!collapsed)}
           >
-            <IoMenu />
+            <Menu />
           </div>
 
-          {/* New Chat */}
-          <button 
-            className="flex items-center gap-3 text-zinc-300 hover:text-white p-2 hover:bg-zinc-800 rounded-md"
+          <button
+            className="flex items-center gap-3 text-slate-300 hover:text-white p-3 hover:bg-slate-800/50 rounded-lg transition-all"
             onClick={() => setChatHistory([])}
           >
-            <FaRegEdit className="text-xl" />
+            <Edit3 className="text-lg" />
             {!collapsed && <span>New chat</span>}
           </button>
 
-          {/* Explore Gems */}
-          <button className="flex items-center gap-3 text-zinc-300 hover:text-white p-2 hover:bg-zinc-800 rounded-md">
-            <IoDiamondOutline className="text-xl" />
+          <button className="flex items-center gap-3 text-slate-300 hover:text-white p-3 hover:bg-slate-800/50 rounded-lg transition-all">
+            <Diamond className="text-lg" />
             {!collapsed && <span>Explore Gems</span>}
           </button>
         </div>
 
-        {/* Bottom Section */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 text-zinc-400 hover:text-white text-sm p-2 hover:bg-zinc-800 rounded-md cursor-pointer">
-            <TfiSettings className="text-xl" />
+          <div className="flex items-center gap-3 text-slate-400 hover:text-white text-sm p-3 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-all">
+            <Settings className="text-lg" />
             {!collapsed && <span>Settings and help</span>}
           </div>
-          <div className="flex items-center gap-3 text-zinc-400 hover:text-white text-sm p-2 hover:bg-zinc-800 rounded-md cursor-pointer">
-            <CgProfile className="text-xl" />
+          <div className="flex items-center gap-3 text-slate-400 hover:text-white text-sm p-3 hover:bg-slate-800/50 rounded-lg cursor-pointer transition-all">
+            <User className="text-lg" />
             {!collapsed && <span>User Profile</span>}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col justify-between ml-16 px-6 pt-4 pb-6">
+      <main
+        className={`flex-1 flex flex-col justify-between transition-all duration-300 px-6 pt-4 pb-6 ${
+          collapsed ? "ml-16" : "ml-64"
+        }`}
+      >
         {/* Chat History */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-6 max-w-3xl w-full mx-auto">
+        <div className="flex-1 overflow-y-auto py-4 space-y-6 max-w-4xl w-full mx-auto">
           {chatHistory.length === 0 && (
             <div className="text-center mt-20">
-              <h1 className="bg-gradient-to-r text-5xl from-red-600 via-green-500 to-indigo-400 mb-12 inline-block text-transparent bg-clip-text">
+              <h1 className="bg-gradient-to-r text-6xl from-blue-400 via-purple-500 to-pink-400 mb-12 inline-block text-transparent bg-clip-text font-bold">
                 Hello, DEV
               </h1>
-              <p className="text-zinc-400 mb-8">Try one of these greetings:</p>
-              <div className="flex flex-wrap justify-center gap-3">
+              <p className="text-slate-400 mb-8 text-lg">
+                Try one of these greetings:
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
                 {greetingSuggestions.map((greeting, index) => (
                   <button
                     key={index}
                     onClick={() => setQuestion(greeting)}
-                    className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all"
+                    className="bg-slate-800/50 hover:bg-slate-700/50 px-4 py-2 rounded-xl transition-all hover:scale-105 border border-slate-600/30"
                   >
                     {greeting}
                   </button>
@@ -153,70 +205,117 @@ function Design() {
               </div>
             </div>
           )}
-          
+
           {chatHistory.map((chat, index) => (
-            <div 
-              key={index} 
-              className={`flex ${chat.isUser ? 'justify-end' : 'justify-start'}`}
+            <div
+              key={index}
+              className={`flex ${
+                chat.isUser ? "justify-end" : "justify-start"
+              } group`}
             >
-              <div 
-                className={`max-w-[85%] rounded-2xl p-4 ${
-                  chat.isUser 
-                    ? 'bg-blue-600 rounded-br-none' 
-                    : 'bg-zinc-800 rounded-bl-none'
+              <div
+                className={`max-w-[85%] rounded-2xl p-4 relative ${
+                  chat.isUser
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 rounded-br-md shadow-lg"
+                    : "bg-slate-800/50 rounded-bl-md border border-slate-700/50 backdrop-blur-sm"
                 }`}
               >
-                {chat.text}
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    {chat.isUser ? (
+                      <div className="whitespace-pre-wrap">{chat.text}</div>
+                    ) : (
+                      <div className="prose prose-invert max-w-none">
+                        {chat.text.includes("*") ? (
+                          <ul className="list-disc pl-4 space-y-1">
+                            {formatAIResponse(chat.text)}
+                          </ul>
+                        ) : (
+                          <p className="whitespace-pre-wrap leading-relaxed">
+                            {chat.text}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {!chat.isUser && (
+                    <button
+                      onClick={() => copyToClipboard(chat.text)}
+                      className="ml-3 p-1 text-slate-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
+                      title="Copy response"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="text-xs text-slate-400 mt-2">
+                  {chat.timestamp}
+                </div>
               </div>
             </div>
           ))}
-          
+
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-zinc-800 rounded-2xl rounded-bl-none p-4">
+              <div className="bg-slate-800/50 rounded-2xl rounded-bl-md p-4 border border-slate-700/50">
                 <div className="flex space-x-2">
-                  <div className="h-2 w-2 bg-white rounded-full animate-bounce"></div>
-                  <div className="h-2 w-2 bg-white rounded-full animate-bounce delay-75"></div>
-                  <div className="h-2 w-2 bg-white rounded-full animate-bounce delay-150"></div>
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce delay-75"></div>
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce delay-150"></div>
                 </div>
               </div>
             </div>
           )}
-          
+
           {error && (
             <div className="flex justify-start">
-              <div className="bg-red-900/30 text-red-400 rounded-2xl rounded-bl-none p-4">
-                Error: {error}
+              <div className="bg-red-900/30 text-red-400 rounded-2xl rounded-bl-md p-4 border border-red-700/50">
+                <div className="flex items-center gap-2">
+                  <span>Error: {error}</span>
+                  <button
+                    onClick={retryLastQuestion}
+                    className="ml-2 p-1 hover:bg-red-800/30 rounded transition-all"
+                    title="Retry"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
-          
+
           <div ref={chatEndRef} />
         </div>
 
         {/* Input Box */}
-        <div className="relative w-full max-w-2xl mx-auto bg-zinc-800 rounded-2xl p-4 shadow-md">
-          <input
-            onChange={(e) => setQuestion(e.target.value)}
-            value={question}
-            type="text"
-            placeholder="Ask anything..."
-            className="w-full bg-transparent text-white placeholder-zinc-400 border border-zinc-700 rounded-xl py-4 px-5 pr-16 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
-            onKeyDown={(e) => e.key === "Enter" && askQuestion()}
-            disabled={loading}
-          />
-
-          <button
-            onClick={askQuestion}
-            disabled={loading || !question.trim()}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all
-              ${loading || !question.trim() 
-                ? "text-zinc-500 cursor-not-allowed" 
-                : "text-blue-400 hover:text-blue-300 hover:scale-110"}`}
-          >
-            <IoMdSend className="text-3xl" />
-          </button>
+        <div className="relative w-full max-w-3xl mx-auto">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 shadow-2xl border border-slate-700/50">
+            <div className="flex items-end gap-3">
+              <input
+                onChange={(e) => setQuestion(e.target.value)}
+                value={question}
+                type="text"
+                placeholder="Ask anything..."
+                className="flex-1 bg-transparent text-white placeholder-slate-400 border border-slate-600/50 rounded-xl py-3 px-4 
+                           focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none"
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !e.shiftKey && askQuestion()
+                }
+                disabled={loading}
+              />
+              <button
+                onClick={askQuestion}
+                disabled={loading || !question.trim()}
+                className={`p-3 rounded-xl transition-all ${
+                  loading || !question.trim()
+                    ? "text-slate-500 cursor-not-allowed"
+                    : "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-105"
+                }`}
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
         </div>
       </main>
     </div>
