@@ -10,6 +10,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { URL } from "./constant";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github-dark.css"; // you can change the theme if you want
 
 function Design() {
   const [collapsed, setCollapsed] = useState(false);
@@ -31,28 +34,6 @@ function Design() {
     "Ohayo gozaimasu!",
     "How's your morning going?",
   ];
-
-  const formatAIResponse = (text) => {
-    const lines = text.split(/\n|\* /).filter((line) => line.trim());
-    return lines
-      .map((line, index) => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return null;
-        if (trimmedLine.startsWith("*") || text.includes("* ")) {
-          return (
-            <li key={index} className="mb-2">
-              {trimmedLine.replace(/^\*\s*/, "")}
-            </li>
-          );
-        }
-        return (
-          <p key={index} className="mb-3 leading-relaxed">
-            {trimmedLine}
-          </p>
-        );
-      })
-      .filter(Boolean);
-  };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -225,17 +206,24 @@ function Design() {
                     {chat.isUser ? (
                       <div className="whitespace-pre-wrap">{chat.text}</div>
                     ) : (
-                      <div className="prose prose-invert max-w-none">
-                        {chat.text.includes("*") ? (
-                          <ul className="list-disc pl-4 space-y-1">
-                            {formatAIResponse(chat.text)}
-                          </ul>
-                        ) : (
-                          <p className="whitespace-pre-wrap leading-relaxed">
-                            {chat.text}
-                          </p>
-                        )}
-                      </div>
+                      <ReactMarkdown
+                        rehypePlugins={[rehypeHighlight]}
+                        components={{
+                          p: ({ children }) => (
+                            <p className="mb-3 leading-relaxed">{children}</p>
+                          ),
+                          code: ({ className, children }) => (
+                            <pre className="bg-slate-800/80 p-4 rounded-xl overflow-x-auto text-sm">
+                              <code className={className}>{children}</code>
+                            </pre>
+                          ),
+                          li: ({ children }) => (
+                            <li className="mb-1 ml-4 list-disc">{children}</li>
+                          ),
+                        }}
+                      >
+                        {chat.text}
+                      </ReactMarkdown>
                     )}
                   </div>
                   {!chat.isUser && (
